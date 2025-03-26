@@ -7,6 +7,9 @@ pipeline {
                     label 'pytest-pod'
                     yamlFile 'kubernetes/test-pod.yaml'  // Reference to the YAML file
                 }
+                docker {
+                image 'bitnami/kubectl:latest'  // ✅ Uses a prebuilt image with kubectl
+                }
             }
             steps {
                 container('python') {
