@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    environment {
+        KUBECTL_PATH = "$HOME/.local/bin/kubectl"
+        PATH = "$HOME/.local/bin:$PATH"
+    }
     stages {
         stage('Check & Install kubectl') {
             steps {
@@ -8,10 +12,11 @@ pipeline {
                     if (kubectlExists.contains("not found")) {
                         echo "🚀 Installing kubectl..."
                         sh '''
+                        mkdir -p $HOME/.local/bin
                         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
                         chmod +x kubectl
-                        mv kubectl /usr/local/bin/
-                        kubectl version --client
+                        mv kubectl $HOME/.local/bin/
+                        echo "✅ kubectl installed successfully!"
                         '''
                     } else {
                         echo "✅ kubectl is already installed!"
