@@ -9,6 +9,34 @@ pipeline {
                 }
                
             }
+        stage('Check & Install kubectl') {
+        steps {
+            script {
+                def kubectlExists = sh(script: 'which kubectl || echo "not found"', returnStdout: true).trim()
+                if (kubectlExists.contains("not found")) {
+                    echo "🚀 Installing kubectl..."
+                    sh '''
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
+                    sudo mv kubectl /usr/local/bin/
+                    kubectl version --client
+                    '''
+                } else {
+                    echo "✅ kubectl is already installed!"
+                }
+            }
+        }
+         }
+
+        stage('Verify Kubernetes Access') {
+            steps {
+                script {
+                    echo "🔍 Checking Kubernetes access..."
+                    sh 'kubectl get pods --all-namespaces || echo "❌ Access Denied!"'
+                }
+            }
+        }
+
             steps {
                 container('python') {
                     script {
