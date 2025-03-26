@@ -29,36 +29,34 @@ pipeline {
             steps {
                 script {
                     echo "🔍 Checking Kubernetes access..."
-                    sh 'kubectl get pods --all-namespaces || echo "❌ Access Denied!"'
+                    sh 'kubectl get nodes || echo "❌ Access Denied!"'
                 }
             }
         }
-        stage('Install Dependencies and Run Tests') {
-            agent {
-                kubernetes {
-                    label 'pytest-pod'
-                    yamlFile 'kubernetes/test-job.yaml'  // Reference to the YAML file
-                }
-               
-            }
-            
-            steps {
-                container('python') {
-                    script {
-                        // Install dependencies
-                        sh 'pip install --no-cache-dir -r requirements.txt'
-                        
-                        // Run E2E tests
-                        sh 'pytest tests/e2e_test.py'
-                    }
-                }
-            }
-        }
-        stage('Monitor Job Status') {
+
+        stage('Run Test Job') {
             steps {
                 script {
-                    // Example: Monitoring with kubectl (checking pod status)
-                    sh 'kubectl get pods -l app=pytest-pod'
+                    echo "🚀 Deploying pytest Job..."
+                    sh 'kubectl apply -f kubernetes/test-job.yaml'
+
+                    echo "⏳ Waiting for Job to complete..."
+                    sh 'kubectl wait --for=condition=complete job/pytest-job --timeout=300s'
+
+                    echo "📜 Fetching logs..."
+                    sh '''
+                    POD_NAME=$(kubectl get pods --selector=job-name=pytest-job -o jsonpath="{.items[0].metadata.name}")
+                    kubectl logs $POD_NAME
+                    '''
+                }
+            }
+        }
+
+        stage('Clean Up') {
+            steps {
+                script {
+                    echo "🧹 Cleaning up test job..."
+                    sh 'kubectl delete job pytest-job'
                 }
             }
         }
@@ -68,10 +66,10 @@ pipeline {
             echo 'Test execution complete!'
         }
         success {
-            echo 'Tests Passed!'
+            echo '✅ Tests Passed!'
         }
         failure {
-            echo 'Tests Failed!'
+            echo '❌ Tests Failed!'
         }
     }
 }

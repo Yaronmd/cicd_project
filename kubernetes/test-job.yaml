@@ -1,20 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: e2e-tests
+  name: pytest-job
   namespace: jenkins
 spec:
   template:
     spec:
-      restartPolicy: Never
       containers:
-        - name: python
-          image: python:3.9
-          command: ["pytest", "tests/e2e_test.py"]
-          volumeMounts:
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
-      volumes:
-        - name: docker-socket
-          hostPath:
-            path: /var/run/docker.sock
+      - name: pytest
+        image: python:3.9
+        command: ["sh", "-c", "pip install -r requirements.txt && pytest tests/e2e_test.py"]
+      restartPolicy: Never
+  backoffLimit: 3
