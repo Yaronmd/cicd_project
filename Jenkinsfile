@@ -1,32 +1,24 @@
 pipeline {
     agent any
     stages {
-        stage('Install Dependencies and Run Tests') {
-            agent {
-                kubernetes {
-                    label 'pytest-pod'
-                    yamlFile 'kubernetes/test-pod.yaml'  // Reference to the YAML file
-                }
-               
-            }
         stage('Check & Install kubectl') {
-        steps {
-            script {
-                def kubectlExists = sh(script: 'which kubectl || echo "not found"', returnStdout: true).trim()
-                if (kubectlExists.contains("not found")) {
-                    echo "🚀 Installing kubectl..."
-                    sh '''
-                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                    chmod +x kubectl
-                    sudo mv kubectl /usr/local/bin/
-                    kubectl version --client
-                    '''
-                } else {
-                    echo "✅ kubectl is already installed!"
+            steps {
+                script {
+                    def kubectlExists = sh(script: 'which kubectl || echo "not found"', returnStdout: true).trim()
+                    if (kubectlExists.contains("not found")) {
+                        echo "🚀 Installing kubectl..."
+                        sh '''
+                        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                        chmod +x kubectl
+                        sudo mv kubectl /usr/local/bin/
+                        kubectl version --client
+                        '''
+                    } else {
+                        echo "✅ kubectl is already installed!"
+                    }
                 }
             }
         }
-         }
 
         stage('Verify Kubernetes Access') {
             steps {
@@ -36,7 +28,15 @@ pipeline {
                 }
             }
         }
-
+        stage('Install Dependencies and Run Tests') {
+            agent {
+                kubernetes {
+                    label 'pytest-pod'
+                    yamlFile 'kubernetes/test-pod.yaml'  // Reference to the YAML file
+                }
+               
+            }
+            
             steps {
                 container('python') {
                     script {
