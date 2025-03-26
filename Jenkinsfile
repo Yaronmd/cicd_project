@@ -37,7 +37,7 @@ pipeline {
             agent {
                 kubernetes {
                     label 'pytest-pod'
-                    yamlFile 'kubernetes/test-pod.yaml'  // Reference to the YAML file
+                    yamlFile 'kubernetes/test-job.yaml'  // Reference to the YAML file
                 }
                
             }
